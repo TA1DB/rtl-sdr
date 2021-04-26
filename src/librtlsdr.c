@@ -329,6 +329,7 @@ static rtlsdr_dongle_t known_devices[] = {
 	{ 0x0ccd, 0x00e0, "Terratec NOXON DAB/DAB+ USB dongle (rev 2)" },
 	{ 0x1554, 0x5020, "PixelView PV-DT235U(RN)" },
 	{ 0x15f4, 0x0131, "Astrometa DVB-T/DVB-T2" },
+	{ 0x15f4, 0x0133, "HanfTek DAB+FM+DVB-T" },
 	{ 0x185b, 0x0620, "Compro Videomate U620F"},
 	{ 0x185b, 0x0650, "Compro Videomate U650F"},
 	{ 0x185b, 0x0680, "Compro Videomate U680F"},
@@ -569,7 +570,7 @@ void rtlsdr_set_gpio_output(rtlsdr_dev_t *dev, uint8_t gpio)
 	gpio = 1 << gpio;
 
 	r = rtlsdr_read_reg(dev, SYSB, GPD, 1);
-	rtlsdr_write_reg(dev, SYSB, GPO, r & ~gpio, 1);
+	rtlsdr_write_reg(dev, SYSB, GPD, r & ~gpio, 1);
 	r = rtlsdr_read_reg(dev, SYSB, GPOE, 1);
 	rtlsdr_write_reg(dev, SYSB, GPOE, r | gpio, 1);
 }
@@ -1564,11 +1565,11 @@ int rtlsdr_open(rtlsdr_dev_t **out_dev, uint32_t index)
 	}
 
 	/* initialise GPIOs */
-	rtlsdr_set_gpio_output(dev, 5);
+	rtlsdr_set_gpio_output(dev, 4);
 
 	/* reset tuner before probing */
-	rtlsdr_set_gpio_bit(dev, 5, 1);
-	rtlsdr_set_gpio_bit(dev, 5, 0);
+	rtlsdr_set_gpio_bit(dev, 4, 1);
+	rtlsdr_set_gpio_bit(dev, 4, 0);
 
 	reg = rtlsdr_i2c_read_reg(dev, FC2580_I2C_ADDR, FC2580_CHECK_ADDR);
 	if ((reg & 0x7f) == FC2580_CHECK_VAL) {
@@ -1935,4 +1936,15 @@ int rtlsdr_i2c_read_fn(void *dev, uint8_t addr, uint8_t *buf, int len)
 		return rtlsdr_i2c_read(((rtlsdr_dev_t *)dev), addr, buf, len);
 
 	return -1;
+}
+
+int rtlsdr_set_bias_tee(rtlsdr_dev_t *dev, int on)
+{
+	if (!dev)
+		return -1;
+
+	rtlsdr_set_gpio_output(dev, 0);
+	rtlsdr_set_gpio_bit(dev, 0, on);
+
+	return 0;
 }
